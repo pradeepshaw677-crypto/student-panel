@@ -106,72 +106,86 @@
             const s = String(url || '').trim();
             return /^(https?:|blob:)/i.test(s) ? s : '';
         }
-        async function hashPassword(pw) {
-            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(pw)));
-            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        // ═══════════════════════════════════════════════════════════════
+        //  AUTH - STUDENT LOGIN (Firebase Auth)
+        //  Student wahi username+password daalta hai jo admin ne diya.
+        //  Password Firebase Auth (Google server) me verify hota hai — kabhi
+        //  browser/Firestore me expose nahi hota. Email sirf internal label hai.
+        // ═══════════════════════════════════════════════════════════════
+        const STUDENT_AUTH_DOMAIN = 'sm-panel.app';
+        function studentEmail(username) {
+            return String(username || '').trim().toLowerCase() + '@' + STUDENT_AUTH_DOMAIN;
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        //  AUTH - STUDENT LOGIN
-        // ═══════════════════════════════════════════════════════════════
         async function loginStudent(username, password) {
-            if (!db) { document.getElementById('loginError').textContent = '❌ Firebase not ready.'; return; }
+            if (!auth || !db) { document.getElementById('loginError').textContent = '❌ Firebase not ready.'; return; }
+            document.getElementById('loginError').textContent = '';
             try {
-                const snapshot = await db.collection('students').where('username', '==', username).get();
-                if (snapshot.empty) { document.getElementById('loginError').textContent = '❌ Invalid username or password.'; return; }
-                const doc = snapshot.docs[0];
-                const data = doc.data();
-                const enteredHash = await hashPassword(password);
-                const ok = data.passwordHash
-                    ? enteredHash === data.passwordHash
-                    : (data.password !== undefined && data.password === password);
-                if (!ok) { document.getElementById('loginError').textContent = '❌ Invalid username or password.'; return; }
-                studentDocId = doc.id;
-                currentStudent = { ...data, id: doc.id };
-                localStorage.setItem('studentSession', JSON.stringify({ docId: doc.id, username: data.username }));
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('dashboard').classList.add('show');
-                showToast(`Welcome, ${data.name || data.username}!`, 'success');
-                listenStudentData(doc.id);
-            } catch (err) { document.getElementById('loginError').textContent = '❌ Error: ' + err.message; }
+                // onAuthStateChanged dashboard load karega sign-in hote hi.
+                await auth.signInWithEmailAndPassword(studentEmail(username), password);
+            } catch (err) {
+                const code = err && err.code;
+                let msg = '❌ Invalid username or password.';
+                if (code === 'auth/too-many-requests') msg = '❌ Bahut baar galat try. Thodi der baad koshish karo.';
+                else if (code === 'auth/invalid-email') msg = '❌ Invalid username.';
+                else if (code === 'auth/network-request-failed') msg = '❌ Network error. Internet check karo.';
+                else if (code && code !== 'auth/user-not-found' && code !== 'auth/wrong-password' && code !== 'auth/invalid-credential') {
+                    msg = '❌ ' + (err.message || 'Login failed');
+                }
+                document.getElementById('loginError').textContent = msg;
+            }
+        }
+
+        async function loadStudentByUid(uid) {
+            const snap = await db.collection('students').where('authUid', '==', uid).limit(1).get();
+            if (snap.empty) return null;
+            const doc = snap.docs[0];
+            return { id: doc.id, data: doc.data() };
+        }
+
+        function showLoginScreen() {
+            if (unsubStudent) { unsubStudent(); unsubStudent = null; }
+            currentStudent = null;
+            studentDocId = null;
+            localStorage.removeItem('studentSession');
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('dashboard').classList.remove('show');
         }
 
         function logoutStudent() {
-            if (unsubStudent) { unsubStudent(); unsubStudent = null; }
-            localStorage.removeItem('studentSession');
-            currentStudent = null;
-            studentDocId = null;
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('dashboard').classList.remove('show');
+            showLoginScreen();
             document.getElementById('loginError').textContent = '';
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
+            const u = document.getElementById('loginUsername'); if (u) u.value = '';
+            const p = document.getElementById('loginPassword'); if (p) p.value = '';
+            if (auth) auth.signOut().catch(() => {});
             showToast('Logged out', 'success');
         }
 
+        // Firebase auth state observe karo — page reload pe bhi session bana rehta
+        // hai, aur login/logout pe dashboard apne aap switch hota hai.
         function checkSession() {
-            const session = localStorage.getItem('studentSession');
-            if (session) {
+            if (!auth) return;
+            auth.onAuthStateChanged(async (user) => {
+                if (!user) { showLoginScreen(); return; }
                 try {
-                    const { docId } = JSON.parse(session);
-                    if (!db) return;
-                    db.collection('students').doc(docId).get()
-                        .then((doc) => {
-                            if (doc.exists) {
-                                const data = doc.data();
-                                studentDocId = docId;
-                                currentStudent = { ...data, id: docId };
-                                document.getElementById('loginScreen').style.display = 'none';
-                                document.getElementById('dashboard').classList.add('show');
-                                listenStudentData(docId);
-                                showToast(`Welcome back, ${data.name || data.username}!`, 'success');
-                            } else {
-                                localStorage.removeItem('studentSession');
-                            }
-                        })
-                        .catch(() => { localStorage.removeItem('studentSession'); });
-                } catch (e) { localStorage.removeItem('studentSession'); }
-            }
+                    const rec = await loadStudentByUid(user.uid);
+                    if (!rec) {
+                        document.getElementById('loginError').textContent = '❌ Account kisi student se linked nahi hai. Admin se contact karo.';
+                        await auth.signOut();
+                        return;
+                    }
+                    studentDocId = rec.id;
+                    currentStudent = { ...rec.data, id: rec.id };
+                    localStorage.setItem('studentSession', JSON.stringify({ docId: rec.id, uid: user.uid }));
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('dashboard').classList.add('show');
+                    document.getElementById('loginError').textContent = '';
+                    listenStudentData(rec.id);
+                    showToast(`Welcome, ${rec.data.name || rec.data.username}!`, 'success');
+                } catch (e) {
+                    document.getElementById('loginError').textContent = '❌ Error: ' + (e.message || e);
+                }
+            });
         }
 
         // ═══════════════════════════════════════════════════════════════
