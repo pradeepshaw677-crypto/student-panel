@@ -1,0 +1,251 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; img-src 'self' data: blob: https:; media-src 'self' https: blob:; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://pradeep-ai-png.github.io; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://www.gstatic.com wss://*.firebaseio.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>🎓 Student Panel · My Dashboard</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/logo.png">
+
+    <!-- Firebase SDKs (compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+
+    <div id="toast"></div>
+
+    <div id="app">
+        <!-- LOGIN SCREEN -->
+        <div id="loginScreen">
+            <a href="index.html" style="display:inline-flex; align-items:center; gap:10px; text-decoration:none; margin-bottom:14px; background:white; padding:8px 18px; border-radius:50px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border:1px solid rgba(14,165,233,0.15);">
+                <img src="/logo.png" alt="Smart Tech Logo" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:2px solid #f59e0b;" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'48\' fill=\'%230f4c81\' stroke=\'%23f59e0b\' stroke-width=\'4\'/%3E%3Ctext x=\'50\' y=\'62\' font-family=\'Arial, sans-serif\' font-size=\'32\' font-weight=\'bold\' fill=\'%23ffffff\' text-anchor=\'middle\'%3EST%3C/text%3E%3C/svg%3E';">
+                <span style="font-weight:800; font-size:16px; color:#0f4c81;">SMART <span style="color:#f59e0b;">TECH</span></span>
+                <span style="color:#94a3b8; font-size:12px; margin-left:4px;"><i class="fas fa-home"></i> Home</span>
+            </a>
+            <div class="logo"><i class="fas fa-user-graduate"></i></div>
+            <h1>Student Panel</h1>
+            <p class="sub">Login to access your dashboard</p>
+            <div class="login-box">
+                <label><i class="fas fa-user"></i> Username</label>
+                <input type="text" id="loginUsername" placeholder="Enter your username">
+                <label><i class="fas fa-lock"></i> Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter your password">
+                <div class="error-msg" id="loginError">❌ Invalid username or password.</div>
+                <button class="login-btn" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+                <div class="hint">Use the username &amp; password given by your admin</div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="dashboard">
+            <!-- TOP BAR -->
+            <div class="dash-top">
+                <div class="brand">
+                    <span class="hamburger" id="hamburgerBtn"><i class="fas fa-bars"></i></span>
+                    <a href="index.html" title="Go to Main Website" style="display:flex; align-items:center; gap:8px; text-decoration:none;">
+                        <img src="/logo.png" alt="Smart Tech Logo" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:2px solid #f59e0b;" onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'48\' fill=\'%230f4c81\' stroke=\'%23f59e0b\' stroke-width=\'4\'/%3E%3Ctext x=\'50\' y=\'62\' font-family=\'Arial, sans-serif\' font-size=\'32\' font-weight=\'bold\' fill=\'%23ffffff\' text-anchor=\'middle\'%3EST%3C/text%3E%3C/svg%3E';">
+                    </a>
+                    <h2><i class="fas fa-user-graduate"></i> Student</h2>
+                    <small>panel</small>
+                </div>
+                <div class="user-area">
+                    <span class="status-badge"><span class="dot"></span> Online</span>
+                    <span class="greet"><i class="fas fa-user"></i> <strong id="studentName">—</strong></span>
+                    <button class="logout-btn" id="dashLogoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+            </div>
+
+            <!-- PAGE: DASHBOARD -->
+            <div class="page-content active" id="page-dashboard">
+                <div class="profile-card" id="profileCard">
+                    <img class="avatar" id="studentAvatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect fill='%23e0f2fe' width='100' height='100' rx='50'/%3E%3Ctext x='50' y='58' font-size='40' text-anchor='middle' fill='%230ea5e9'%3E👤%3C/text%3E%3C/svg%3E" alt="Avatar">
+                    <div class="info">
+                        <div class="name" id="studentFullName">—</div>
+                        <div class="detail"><i class="fas fa-phone"></i> Mobile: <strong id="studentMobile">—</strong></div>
+                        <div class="detail"><i class="fas fa-book"></i> Course: <strong id="studentCourse">—</strong></div>
+                        <div class="detail"><i class="far fa-clock"></i> Batch: <strong id="studentSlot">—</strong></div>
+                        <div class="detail"><i class="fas fa-calendar-day"></i> Admission: <strong id="studentAdmission">—</strong></div>
+                        <div class="detail"><i class="fas fa-coins"></i> Fee: <strong id="studentFee">—</strong></div>
+                        <div class="detail"><i class="fas fa-box"></i> Package: <strong id="studentPackage">—</strong></div>
+                        <div class="detail"><i class="fas fa-calendar-alt"></i> Duration: <strong id="studentDuration">—</strong></div>
+                        <div class="stats-mini">
+                            <div class="stat-item"><span class="num" id="statTotalDays">0</span>Total Days</div>
+                            <div class="stat-item"><span class="num green" id="statPresent">0</span>✅ Present</div>
+                            <div class="stat-item"><span class="num red" id="statAbsent">0</span>❌ Absent</div>
+                            <div class="stat-item"><span class="num" id="statSylProgress">0%</span>Syllabus</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="attendance-card" style="margin-top: 0;">
+                    <div class="att-header">
+                        <h3><i class="fas fa-clipboard-check"></i> Today's Attendance</h3>
+                        <span class="date-badge" id="attTodayDate">—</span>
+                    </div>
+                    <div class="att-status" id="attStatusBlock">
+                        <span class="status-big pending" id="attStatusLabel">⏳ Pending</span>
+                        <button class="mark-btn" id="markAttendanceBtn"><i class="fas fa-check"></i> Mark Present</button>
+                        <span class="elig-note" id="eligNote">Loading...</span>
+                    </div>
+                    <div style="margin-top:16px; border-top:1px solid rgba(14,165,233,0.04); padding-top:14px;">
+                        <div style="font-size:13px; color:#64748b; display:flex; gap:20px; flex-wrap:wrap;">
+                            <span>📅 <strong id="attTotalDays">0</strong> days</span>
+                            <span style="color:#0284c7;">✅ <strong id="attPresentCount">0</strong> present</span>
+                            <span style="color:#b04040;">❌ <strong id="attAbsentCount">0</strong> absent</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: SYLLABUS -->
+            <div class="page-content" id="page-syllabus">
+                <button class="back-btn" onclick="navigateTo('page-dashboard')"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+                <div class="syllabus-section">
+                    <div class="syl-header">
+                        <h3><i class="fas fa-list"></i> My Syllabus</h3>
+                        <span class="progress-badge" id="sylProgressBadge">0%</span>
+                    </div>
+                    <div class="progress-bar-wrap"><div class="fill" id="sylProgressFill"></div></div>
+                    <div class="syllabus-list" id="syllabusList">
+                        <div class="empty-state"><i class="fas fa-book-open"></i>No syllabus added yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: ATTENDANCE HISTORY -->
+            <div class="page-content" id="page-attendance-history">
+                <button class="back-btn" onclick="navigateTo('page-dashboard')"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+                <div class="history-section">
+                    <div class="history-header">
+                        <h3><i class="fas fa-history"></i> Attendance History</h3>
+                        <span class="badge-rem" id="attHistoryBadge">0 records</span>
+                    </div>
+                    <div class="history-list-full" id="attendanceHistoryList">
+                        <div class="empty-state"><i class="fas fa-clipboard-list"></i>No attendance records yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: REMINDERS -->
+            <div class="page-content" id="page-reminders">
+                <button class="back-btn" onclick="navigateTo('page-dashboard')"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+                <div class="reminder-section">
+                    <div class="rem-header">
+                        <h3><i class="fas fa-bell"></i> My Reminders</h3>
+                        <span class="badge-rem" id="remBadge">0 pending</span>
+                    </div>
+                    <div class="reminder-list" id="reminderList">
+                        <div class="empty-state"><i class="fas fa-bell-slash"></i>No reminders yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: REMINDER HISTORY -->
+            <div class="page-content" id="page-reminder-history">
+                <button class="back-btn" onclick="navigateTo('page-dashboard')"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+                <div class="history-section">
+                    <div class="history-header">
+                        <h3><i class="fas fa-bell"></i> Reminder History</h3>
+                        <span class="badge-rem" id="remHistoryBadge">0 reminders</span>
+                    </div>
+                    <div class="history-list-full" id="reminderHistoryList">
+                        <div class="empty-state"><i class="fas fa-bell-slash"></i>No reminders yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE: COURSE VIDEOS -->
+            <div class="page-content" id="page-course">
+                <button class="back-btn" onclick="navigateTo('page-dashboard')"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+                <div class="course-section">
+                    <div class="course-header">
+                        <h3><i class="fas fa-video"></i> My Courses</h3>
+                        <span class="badge-course" id="courseBadge">0 videos</span>
+                    </div>
+                    <div class="course-list" id="courseList">
+                        <div class="empty-state"><i class="fas fa-film"></i>No course videos added yet.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-user-graduate"></i> Menu</h3>
+                <span class="close-btn" id="sidebarClose"><i class="fas fa-times"></i></span>
+            </div>
+            <div class="menu-section">
+                <div class="menu-label">My Account</div>
+                <div class="menu-item active" data-page="page-dashboard"><i class="fas fa-id-card"></i> Dashboard</div>
+                <div class="menu-item" data-page="page-syllabus"><i class="fas fa-list"></i> Syllabus <span class="badge green" id="menuSylBadge">0%</span></div>
+                <div class="menu-item" data-page="page-course"><i class="fas fa-video"></i> My Course <span class="badge green" id="menuCourseBadge">0</span></div>
+                <div class="menu-item" data-page="page-attendance-history"><i class="fas fa-history"></i> Attendance History <span class="badge gold" id="menuAttHistBadge">0</span></div>
+                <div class="menu-item" data-page="page-reminders"><i class="fas fa-bell"></i> Reminders <span class="badge" id="menuRemBadge">0</span></div>
+                <div class="menu-item" data-page="page-reminder-history"><i class="fas fa-bell"></i> Reminder History <span class="badge gold" id="menuRemHistBadge">0</span></div>
+            </div>
+            <div class="menu-section" style="margin-top:auto; border-top:1px solid rgba(14,165,233,0.06); padding-top:12px;">
+                <div class="menu-item" id="sidebarLogout" style="color:#b04040;"><i class="fas fa-sign-out-alt" style="color:#b04040;"></i> Logout</div>
+            </div>
+        </div>
+
+        <!-- CONFIRM MODAL -->
+        <div class="modal-overlay" id="confirmModal">
+            <div class="modal-box">
+                <h3><i class="fas fa-check-circle" style="color:#0ea5e9;"></i> Confirm Payment</h3>
+                <div class="sub" id="confirmSub">Are you sure you want to request payment for this reminder?</div>
+                <div class="btn-group">
+                    <button class="confirm-btn" id="confirmPayBtn"><i class="fas fa-check"></i> Yes, Pay</button>
+                    <button class="cancel-btn" id="confirmCancelBtn"><i class="fas fa-times"></i> Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIDEO PLAYER OVERLAY -->
+        <div class="video-player-overlay" id="videoPlayerOverlay">
+            <div class="video-player-container">
+                <div class="video-player-header">
+                    <span class="vp-title" id="videoPlayerTitle"><i class="fas fa-play-circle" style="color:#0ea5e9;"></i> Video</span>
+                    <button class="vp-close" onclick="closeVideoPlayer()">×</button>
+                </div>
+                <div class="video-player-body" id="videoPlayerBody">
+                    <div style="text-align:center;color:#64748b;padding:40px 0;">Loading video...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING AI PRO BUTTON -->
+    <div style="position:fixed; bottom:24px; right:20px; z-index:9000;">
+        <button onclick="toggleAiAssistant()" style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg, #0284c7, #0ea5e9, #38bdf8); color:#fff; border:2px solid #fff; cursor:pointer; box-shadow:0 8px 25px rgba(14,165,233,0.4); display:flex; align-items:center; justify-content:center; font-size:22px; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Smart Tech AI Pro">
+            <i class="fas fa-robot"></i>
+        </button>
+    </div>
+
+    <!-- AI PRO MODAL -->
+    <div id="ai-assistant-modal" style="display:none; position:fixed; bottom:20px; right:20px; width:420px; max-width:92vw; height:600px; max-height:85vh; background:#fff; border-radius:24px; box-shadow:0 20px 60px rgba(0,0,0,0.25); border:1px solid rgba(14,165,233,0.2); z-index:9999; overflow:hidden; flex-direction:column;">
+        <div style="background:linear-gradient(135deg, #0284c7, #0f4c81); color:#fff; padding:12px 16px; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-robot" style="color:#38bdf8;"></i>
+                <strong style="font-size:14px;">Smart Tech AI Pro</strong>
+            </div>
+            <button onclick="toggleAiAssistant()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer; padding:4px 8px;">×</button>
+        </div>
+        <iframe id="ai-iframe" data-src="https://pradeep-ai-png.github.io/smart-tech-aipro/" style="width:100%; height:100%; border:none; flex:1;"></iframe>
+    </div>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/app.js"></script>
+</body></html>
